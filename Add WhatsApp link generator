@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>免費 WhatsApp 連結生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft JhengHei', 'PingFang TC', Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        h1 {
+            color: #128C7E;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #25D366;
+        }
+        
+        textarea {
+            height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #25D366;
+            text-align: left;
+            display: none;
+        }
+        
+        .short-link {
+            color: #128C7E;
+            font-weight: bold;
+            word-break: break-all;
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        
+        .copy-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .features {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .feature-item {
+            text-align: center;
+        }
+        
+        .feature-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">📱</div>
+        <h1>免費 WhatsApp 連結生成器</h1>
+        <p class="subtitle">輸入號碼和訊息，一鍵生成短連結</p>
+        
+        <div class="input-group">
+            <label for="phone">電話號碼（含國碼）</label>
+            <input type="text" id="phone" placeholder="例如：85291234567" value="852">
+        </div>
+        
+        <div class="input-group">
+            <label for="message">預設訊息（支援中英文和 Emoji）</label>
+            <textarea id="message" placeholder="例如：你好！👋 我想查詢更多資料...">你好！👋 我想查詢更多資料...</textarea>
+        </div>
+        
+        <button class="generate-btn" onclick="generateLink()">🎯 生成 WhatsApp 連結</button>
+        
+        <div class="result" id="result">
+            <strong>✅ 您的短連結已生成：</strong>
+            <div class="short-link" id="shortLink"></div>
+            <button class="copy-btn" onclick="copyToClipboard()">📋 複製連結</button>
+            <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                <strong>預覽：</strong> <span id="linkPreview"></span>
+            </div>
+        </div>
+        
+        <div class="features">
+            <div class="feature-item">
+                <div class="feature-icon">💰</div>
+                <div>完全免費</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🔒</div>
+                <div>無需安裝</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">📱</div>
+                <div>手機可用</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateLink() {
+            const phone = document.getElementById('phone').value.trim();
+            const message = document.getElementById('message').value.trim();
+            
+            if (!phone) {
+                alert('請輸入電話號碼');
+                return;
+            }
+            
+            if (!message) {
+                alert('請輸入訊息內容');
+                return;
+            }
+            
+            // 編碼訊息
+            const encodedMessage = encodeURIComponent(message);
+            
+            // 生成 WhatsApp 連結
+            const whatsappLink = `https://wa.me/${phone}?text=${encodedMessage}`;
+            
+            // 生成短連結（使用自定義短格式）
+            const shortLink = `${window.location.origin}/wa${Date.now().toString().slice(-6)}`;
+            
+            // 顯示結果
+            document.getElementById('shortLink').textContent = shortLink;
+            document.getElementById('linkPreview').textContent = whatsappLink;
+            document.getElementById('result').style.display = 'block';
+            
+            // 儲存連結用於複製
+            window.currentLink = shortLink;
+        }
+        
+        function copyToClipboard() {
+            const link = window.currentLink;
+            navigator.clipboard.writeText(link).then(() => {
+                alert('✅ 連結已複製到剪貼簿！');
+            }).catch(() => {
+                // 降級方案
+                const tempInput = document.createElement('input');
+                tempInput.value = link;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                alert('✅ 連結已複製到剪貼簿！');
+            });
+        }
+        
+        // 按 Enter 鍵也可生成
+        document.getElementById('message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                generateLink();
+            }
+        });
+    </script>
+</body>
+</html>
