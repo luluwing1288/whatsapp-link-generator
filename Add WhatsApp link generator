@@ -284,47 +284,51 @@
             }
         }
         
-        // 使用免費短網址 API
-        async function shortenUrl(longUrl) {
-            try {
-                // 方法1: 使用 tinyurl API（最穩定）
-                const tinyUrlResponse = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-                if (tinyUrlResponse.ok) {
-                    const shortUrl = await tinyUrlResponse.text();
-                    if (shortUrl && shortUrl.startsWith('http')) {
-                        return shortUrl;
-                    }
-                }
-            } catch (error) {
-                console.log('TinyURL failed, trying backup service...');
+        // 使用直接跳轉的短網址服務（無廣告）
+async function shortenUrl(longUrl) {
+    try {
+        // 方法1: 使用 is.gd（無廣告，直接跳轉）
+        const isgdResponse = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`);
+        if (isgdResponse.ok) {
+            const shortUrl = await isgdResponse.text();
+            if (shortUrl && shortUrl.startsWith('http')) {
+                return shortUrl;
             }
-            
-            try {
-                // 方法2: 備用服務 - shrtcode
-                const shrtcoResponse = await fetch(`https://api.shrtco.de/v2/shorten?url=${encodeURIComponent(longUrl)}`);
-                const shrtcoData = await shrtcoResponse.json();
-                if (shrtcoData.ok) {
-                    return shrtcoData.result.full_short_link;
-                }
-            } catch (error) {
-                console.log('shrtco failed, trying another backup...');
-            }
-            
-            try {
-                // 方法3: 備用服務 - dagd
-                const dagdResponse = await fetch(`https://da.gd/shorten?url=${encodeURIComponent(longUrl)}`);
-                const dagdText = await dagdResponse.text();
-                if (dagdText.trim().startsWith('http')) {
-                    return dagdText.trim();
-                }
-            } catch (error) {
-                console.log('All shortener services failed');
-            }
-            
-            // 所有服務都失敗，拋出錯誤
-            throw new Error('All URL shortening services failed');
         }
-        
+    } catch (error) {
+        console.log('is.gd failed, trying v.gd...');
+    }
+    
+    try {
+        // 方法2: 使用 v.gd（同 is.gd，備用）
+        const vgdResponse = await fetch(`https://v.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`);
+        if (vgdResponse.ok) {
+            const shortUrl = await vgdResponse.text();
+            if (shortUrl && shortUrl.startsWith('http')) {
+                return shortUrl;
+            }
+        }
+    } catch (error) {
+        console.log('v.gd failed, trying other services...');
+    }
+    
+    try {
+        // 方法3: 使用 tinyurl（最後備用）
+        const tinyUrlResponse = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+        if (tinyUrlResponse.ok) {
+            const shortUrl = await tinyUrlResponse.text();
+            if (shortUrl && shortUrl.startsWith('http')) {
+                return shortUrl;
+            }
+        }
+    } catch (error) {
+        console.log('All direct URL shortening services failed');
+    }
+    
+    // 所有服務都失敗，使用原始連結
+    throw new Error('All URL shortening services failed');
+}
+   
         function copyToClipboard() {
             const link = window.currentLink;
             if (!link) {
