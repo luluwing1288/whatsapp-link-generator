@@ -194,7 +194,7 @@
         </div>
         
         <button class="generate-btn" id="generateBtn" onclick="generateLink()">🎯 生成 WhatsApp 短連結</button>
-        <div class="subtitle">自動生成真正短連結（約 25-30 個字符）</div>
+        <div class="subtitle">自動生成無廣告短連結（直接跳轉 WhatsApp）</div>
         
         <div class="result" id="result">
             <strong>✅ 您的短連結已生成：</strong>
@@ -212,8 +212,8 @@
                 <div>完全免費</div>
             </div>
             <div class="feature-item">
-                <div class="feature-icon">🔗</div>
-                <div>真正短連結</div>
+                <div class="feature-icon">🚀</div>
+                <div>直接跳轉</div>
             </div>
             <div class="feature-item">
                 <div class="feature-icon">📱</div>
@@ -285,50 +285,66 @@
         }
         
         // 使用直接跳轉的短網址服務（無廣告）
-async function shortenUrl(longUrl) {
-    try {
-        // 方法1: 使用 is.gd（無廣告，直接跳轉）
-        const isgdResponse = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`);
-        if (isgdResponse.ok) {
-            const shortUrl = await isgdResponse.text();
-            if (shortUrl && shortUrl.startsWith('http')) {
-                return shortUrl;
+        async function shortenUrl(longUrl) {
+            try {
+                // 方法1: 使用 cleanuri.com（無廣告，直接跳轉）
+                const cleanUriResponse = await fetch('https://cleanuri.com/api/v1/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `url=${encodeURIComponent(longUrl)}`
+                });
+                const cleanUriData = await cleanUriResponse.json();
+                if (cleanUriData.result_url) {
+                    return cleanUriData.result_url;
+                }
+            } catch (error) {
+                console.log('cleanuri failed, trying shrtlnk...');
             }
-        }
-    } catch (error) {
-        console.log('is.gd failed, trying v.gd...');
-    }
-    
-    try {
-        // 方法2: 使用 v.gd（同 is.gd，備用）
-        const vgdResponse = await fetch(`https://v.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`);
-        if (vgdResponse.ok) {
-            const shortUrl = await vgdResponse.text();
-            if (shortUrl && shortUrl.startsWith('http')) {
-                return shortUrl;
+            
+            try {
+                // 方法2: 使用 shrtlnk.dev（無廣告）
+                const shrtlnkResponse = await fetch(`https://api.shrtlnk.dev/links`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: longUrl
+                    })
+                });
+                const shrtlnkData = await shrtlnkResponse.json();
+                if (shrtlnkData.url) {
+                    return shrtlnkData.url;
+                }
+            } catch (error) {
+                console.log('shrtlnk failed, trying other services...');
             }
-        }
-    } catch (error) {
-        console.log('v.gd failed, trying other services...');
-    }
-    
-    try {
-        // 方法3: 使用 tinyurl（最後備用）
-        const tinyUrlResponse = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-        if (tinyUrlResponse.ok) {
-            const shortUrl = await tinyUrlResponse.text();
-            if (shortUrl && shortUrl.startsWith('http')) {
-                return shortUrl;
+            
+            try {
+                // 方法3: 使用 mcw.fly.dev（無廣告）
+                const mcwResponse = await fetch(`https://mcw.fly.dev/shorten`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: longUrl
+                    })
+                });
+                const mcwData = await mcwResponse.json();
+                if (mcwData.short) {
+                    return mcwData.short;
+                }
+            } catch (error) {
+                console.log('All direct URL shortening services failed');
             }
+            
+            // 所有無廣告服務都失敗，拋出錯誤
+            throw new Error('All ad-free URL shortening services failed');
         }
-    } catch (error) {
-        console.log('All direct URL shortening services failed');
-    }
-    
-    // 所有服務都失敗，使用原始連結
-    throw new Error('All URL shortening services failed');
-}
-   
+        
         function copyToClipboard() {
             const link = window.currentLink;
             if (!link) {
