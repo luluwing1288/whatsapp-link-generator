@@ -91,10 +91,17 @@
             cursor: pointer;
             width: 100%;
             transition: transform 0.2s;
+            margin-bottom: 10px;
         }
         
         .generate-btn:hover {
             transform: translateY(-2px);
+        }
+
+        .generate-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .result {
@@ -113,16 +120,26 @@
             word-break: break-all;
             margin: 10px 0;
             font-size: 18px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
         }
         
         .copy-btn {
             background: #25D366;
             color: white;
             border: none;
-            padding: 8px 15px;
+            padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
             margin-top: 10px;
+            font-size: 16px;
+            width: 100%;
+        }
+
+        .copy-btn:hover {
+            background: #128C7E;
         }
         
         .features {
@@ -141,13 +158,30 @@
             font-size: 20px;
             margin-bottom: 5px;
         }
+
+        .loading {
+            color: #128C7E;
+            font-style: italic;
+        }
+
+        .error {
+            color: #ff4444;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .success {
+            color: #25D366;
+            font-size: 14px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo">📱</div>
         <h1>免費 WhatsApp 連結生成器</h1>
-        <p class="subtitle">輸入號碼和訊息，一鍵生成短連結</p>
+        <p class="subtitle">輸入號碼和訊息，一鍵生成真正短連結</p>
         
         <div class="input-group">
             <label for="phone">電話號碼（含國碼）</label>
@@ -159,15 +193,17 @@
             <textarea id="message" placeholder="例如：你好！👋 我想查詢更多資料...">你好！👋 我想查詢更多資料...</textarea>
         </div>
         
-        <button class="generate-btn" onclick="generateLink()">🎯 生成 WhatsApp 連結</button>
+        <button class="generate-btn" id="generateBtn" onclick="generateLink()">🎯 生成 WhatsApp 短連結</button>
+        <div class="subtitle">自動生成真正短連結（約 25-30 個字符）</div>
         
         <div class="result" id="result">
             <strong>✅ 您的短連結已生成：</strong>
             <div class="short-link" id="shortLink"></div>
-            <button class="copy-btn" onclick="copyToClipboard()">📋 複製連結</button>
+            <button class="copy-btn" onclick="copyToClipboard()">📋 複製短連結</button>
             <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                <strong>預覽：</strong> <span id="linkPreview"></span>
+                <strong>原始連結預覽：</strong> <span id="linkPreview"></span>
             </div>
+            <div id="statusMessage"></div>
         </div>
         
         <div class="features">
@@ -176,8 +212,8 @@
                 <div>完全免費</div>
             </div>
             <div class="feature-item">
-                <div class="feature-icon">🔒</div>
-                <div>無需安裝</div>
+                <div class="feature-icon">🔗</div>
+                <div>真正短連結</div>
             </div>
             <div class="feature-item">
                 <div class="feature-icon">📱</div>
@@ -187,9 +223,11 @@
     </div>
 
     <script>
-        function generateLink() {
+        async function generateLink() {
             const phone = document.getElementById('phone').value.trim();
             const message = document.getElementById('message').value.trim();
+            const generateBtn = document.getElementById('generateBtn');
+            const statusMessage = document.getElementById('statusMessage');
             
             if (!phone) {
                 alert('請輸入電話號碼');
@@ -201,28 +239,101 @@
                 return;
             }
             
-            // 編碼訊息
-            const encodedMessage = encodeURIComponent(message);
+            // 禁用按鈕防止重複點擊
+            generateBtn.disabled = true;
+            generateBtn.textContent = '⏳ 生成中...';
+            statusMessage.innerHTML = '<div class="loading">正在生成短連結，請稍候...</div>';
             
-            // 生成 WhatsApp 連結
-            const whatsappLink = `https://wa.me/${phone}?text=${encodedMessage}`;
-            
-            // 生成短連結（使用自定義短格式）
-            const shortLink = `${window.location.origin}/wa${Date.now().toString().slice(-6)}`;
-            
-            // 顯示結果
-            document.getElementById('shortLink').textContent = shortLink;
-            document.getElementById('linkPreview').textContent = whatsappLink;
+            // 顯示結果區域
             document.getElementById('result').style.display = 'block';
+            document.getElementById('shortLink').textContent = '生成中...';
             
-            // 儲存連結用於複製
-            window.currentLink = shortLink;
+            try {
+                // 編碼訊息
+                const encodedMessage = encodeURIComponent(message);
+                
+                // 生成 WhatsApp 連結
+                const whatsappLink = `https://wa.me/${phone}?text=${encodedMessage}`;
+                document.getElementById('linkPreview').textContent = whatsappLink;
+                
+                // 使用免費短網址服務生成真正短連結
+                const shortLink = await shortenUrl(whatsappLink);
+                
+                // 顯示真正的短連結
+                document.getElementById('shortLink').textContent = shortLink;
+                
+                // 儲存連結用於複製
+                window.currentLink = shortLink;
+                
+                statusMessage.innerHTML = '<div class="success">✅ 短連結生成成功！</div>';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                // 如果短網址服務失敗，使用原始連結
+                const encodedMessage = encodeURIComponent(message);
+                const whatsappLink = `https://wa.me/${phone}?text=${encodedMessage}`;
+                document.getElementById('shortLink').textContent = whatsappLink;
+                document.getElementById('linkPreview').textContent = '短網址服務暫時不可用，這是原始連結';
+                window.currentLink = whatsappLink;
+                
+                statusMessage.innerHTML = '<div class="error">⚠️ 短連結服務繁忙，已顯示原始連結</div>';
+            } finally {
+                // 重新啟用按鈕
+                generateBtn.disabled = false;
+                generateBtn.textContent = '🎯 生成 WhatsApp 短連結';
+            }
+        }
+        
+        // 使用免費短網址 API
+        async function shortenUrl(longUrl) {
+            try {
+                // 方法1: 使用 tinyurl API（最穩定）
+                const tinyUrlResponse = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+                if (tinyUrlResponse.ok) {
+                    const shortUrl = await tinyUrlResponse.text();
+                    if (shortUrl && shortUrl.startsWith('http')) {
+                        return shortUrl;
+                    }
+                }
+            } catch (error) {
+                console.log('TinyURL failed, trying backup service...');
+            }
+            
+            try {
+                // 方法2: 備用服務 - shrtcode
+                const shrtcoResponse = await fetch(`https://api.shrtco.de/v2/shorten?url=${encodeURIComponent(longUrl)}`);
+                const shrtcoData = await shrtcoResponse.json();
+                if (shrtcoData.ok) {
+                    return shrtcoData.result.full_short_link;
+                }
+            } catch (error) {
+                console.log('shrtco failed, trying another backup...');
+            }
+            
+            try {
+                // 方法3: 備用服務 - dagd
+                const dagdResponse = await fetch(`https://da.gd/shorten?url=${encodeURIComponent(longUrl)}`);
+                const dagdText = await dagdResponse.text();
+                if (dagdText.trim().startsWith('http')) {
+                    return dagdText.trim();
+                }
+            } catch (error) {
+                console.log('All shortener services failed');
+            }
+            
+            // 所有服務都失敗，拋出錯誤
+            throw new Error('All URL shortening services failed');
         }
         
         function copyToClipboard() {
             const link = window.currentLink;
+            if (!link) {
+                alert('請先生成連結');
+                return;
+            }
+            
             navigator.clipboard.writeText(link).then(() => {
-                alert('✅ 連結已複製到剪貼簿！');
+                alert('✅ 短連結已複製到剪貼簿！');
             }).catch(() => {
                 // 降級方案
                 const tempInput = document.createElement('input');
@@ -231,7 +342,7 @@
                 tempInput.select();
                 document.execCommand('copy');
                 document.body.removeChild(tempInput);
-                alert('✅ 連結已複製到剪貼簿！');
+                alert('✅ 短連結已複製到剪貼簿！');
             });
         }
         
@@ -241,6 +352,9 @@
                 generateLink();
             }
         });
+
+        // 初始化顯示
+        document.getElementById('result').style.display = 'none';
     </script>
 </body>
 </html>
